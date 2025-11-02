@@ -13,6 +13,11 @@ const router = createRouter({
       name: 'outlets',
       component: () => import('../pages/OutletListPage.vue'),
     },
+    {
+      path: '/dashboard',
+      name: 'dashboard',
+      component: () => import('../pages/DashboardPage.vue'),
+    },
   ],
 })
 
