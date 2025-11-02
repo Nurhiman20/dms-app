@@ -73,8 +73,8 @@
             <template v-slot:body-cell-status="props">
               <q-td :props="props">
                 <q-badge
-                  :color="props.value ? 'positive' : 'negative'"
-                  :label="props.value ? 'Active' : 'Inactive'"
+                  :color="props.row.isActive ? 'positive' : 'negative'"
+                  :label="props.row.isActive ? 'Active' : 'Inactive'"
                 />
               </q-td>
             </template>
