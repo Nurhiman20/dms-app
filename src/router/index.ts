@@ -8,6 +8,11 @@ const router = createRouter({
       name: 'login',
       component: () => import('../pages/LoginPage.vue'),
     },
+    {
+      path: '/outlets',
+      name: 'outlets',
+      component: () => import('../pages/OutletListPage.vue'),
+    },
   ],
 })
 
