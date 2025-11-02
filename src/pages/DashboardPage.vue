@@ -1,40 +1,32 @@
 <template>
-  <q-layout view="hHh lpR fFf">
-    <q-page-container>
-      <q-page class="q-pa-md">
-        <div class="dashboard-container">
-          <!-- Header -->
-          <div class="dashboard-header q-mb-md">
-            <h1 class="dashboard-title">Dashboard</h1>
-            <p class="dashboard-subtitle">Sales overview by region</p>
-          </div>
+  <q-page class="q-pa-md">
+    <div class="dashboard-container">
+      <!-- Header -->
+      <div class="dashboard-header q-mb-md">
+        <h1 class="dashboard-title">Dashboard</h1>
+        <p class="dashboard-subtitle">Sales overview by region</p>
+      </div>
 
-          <!-- Chart Container -->
-          <div class="chart-container">
-            <q-card class="chart-card">
-              <q-card-section>
-                <div class="chart-header q-mb-md">
-                  <h2 class="chart-title">Total Sales per Region</h2>
-                </div>
-                <div class="chart-wrapper">
-                  <Bar
-                    v-if="chartData"
-                    :data="chartData"
-                    :options="chartOptions"
-                  />
-                </div>
-              </q-card-section>
-            </q-card>
-          </div>
-        </div>
-      </q-page>
-    </q-page-container>
-  </q-layout>
+      <!-- Chart Container -->
+      <div class="chart-container">
+        <q-card flat bordered class="chart-card">
+          <q-card-section>
+            <div class="chart-header q-mb-md">
+              <h2 class="chart-title">Total Sales per Region</h2>
+            </div>
+            <div class="chart-wrapper">
+              <Bar v-if="chartData" :data="chartData" :options="chartOptions" />
+            </div>
+          </q-card-section>
+        </q-card>
+      </div>
+    </div>
+  </q-page>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Bar } from 'vue-chartjs'
+import { computed } from "vue";
+import { Bar } from "vue-chartjs";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -43,53 +35,46 @@ import {
   Title,
   Tooltip,
   Legend,
-} from 'chart.js'
-import { useOutletStore } from '../stores/outlet'
+} from "chart.js";
+import { useOutletStore } from "../stores/outlet";
 
 // Register Chart.js components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend
-)
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-const outletStore = useOutletStore()
+const outletStore = useOutletStore();
 
 // Calculate total sales per region
 const salesByRegion = computed(() => {
-  const regionMap = new Map<string, number>()
-  
+  const regionMap = new Map<string, number>();
+
   outletStore.outlets.forEach((outlet) => {
-    const currentTotal = regionMap.get(outlet.region) || 0
-    regionMap.set(outlet.region, currentTotal + outlet.totalOrder)
-  })
-  
+    const currentTotal = regionMap.get(outlet.region) || 0;
+    regionMap.set(outlet.region, currentTotal + outlet.totalOrder);
+  });
+
   return {
     labels: Array.from(regionMap.entries()).map(([region]) => region),
     data: Array.from(regionMap.entries()).map(([, total]) => total),
-  }
-})
+  };
+});
 
 // Prepare chart data
 const chartData = computed(() => {
-  const { labels, data } = salesByRegion.value
-  
+  const { labels, data } = salesByRegion.value;
+
   return {
     labels,
     datasets: [
       {
-        label: 'Total Sales',
-        backgroundColor: 'rgba(54, 162, 235, 0.8)',
-        borderColor: 'rgba(54, 162, 235, 1)',
+        label: "Total Sales",
+        backgroundColor: "rgba(54, 162, 235, 0.8)",
+        borderColor: "rgba(54, 162, 235, 1)",
         borderWidth: 1,
         data,
       },
     ],
-  }
-})
+  };
+});
 
 // Chart options
 const chartOptions = {
@@ -98,7 +83,7 @@ const chartOptions = {
   plugins: {
     legend: {
       display: true,
-      position: 'top' as const,
+      position: "top" as const,
     },
     title: {
       display: false,
@@ -106,7 +91,7 @@ const chartOptions = {
     tooltip: {
       callbacks: {
         label: function (context: any) {
-          return `Sales: ${context.parsed.y.toLocaleString()}`
+          return `Sales: ${context.parsed.y.toLocaleString()}`;
         },
       },
     },
@@ -116,12 +101,12 @@ const chartOptions = {
       beginAtZero: true,
       ticks: {
         callback: function (value: any) {
-          return value.toLocaleString()
+          return value.toLocaleString();
         },
       },
     },
   },
-}
+};
 </script>
 
 <style scoped lang="sass">
@@ -170,4 +155,3 @@ const chartOptions = {
   .chart-wrapper
     height: 300px
 </style>
-

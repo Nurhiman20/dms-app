@@ -1,94 +1,90 @@
 <template>
-  <q-layout view="hHh lpR fFf">
-    <q-page-container>
-      <q-page class="q-pa-md">
-        <div class="outlet-list-container">
-          <!-- Header -->
-          <div class="outlet-list-header q-mb-md">
-            <h1 class="outlet-list-title">Outlet List</h1>
-            <p class="outlet-list-subtitle">Manage and monitor all outlets</p>
+  <q-page class="q-pa-lg">
+    <div class="outlet-list-container">
+      <!-- Header -->
+      <div class="outlet-list-header q-mb-md">
+        <h1 class="outlet-list-title">Outlet List</h1>
+        <p class="outlet-list-subtitle">Manage and monitor all outlets</p>
+      </div>
+
+      <!-- Search and Filters -->
+      <div class="outlet-filters q-mb-md">
+        <div class="row outlet-filters-row">
+          <div class="col-xs-12 col-sm-6 col-md-4">
+            <q-input
+              v-model="searchQuery"
+              outlined
+              placeholder="Search by outlet name..."
+              clearable
+              class="outlet-search-input"
+              dense
+            >
+              <template v-slot:prepend>
+                <q-icon name="search" />
+              </template>
+            </q-input>
           </div>
-
-          <!-- Search and Filters -->
-          <div class="outlet-filters q-mb-md">
-            <div class="row outlet-filters-row">
-              <div class="col-xs-12 col-sm-6 col-md-4">
-                <q-input
-                  v-model="searchQuery"
-                  outlined
-                  placeholder="Search by outlet name..."
-                  clearable
-                  class="outlet-search-input"
-                  dense
-                >
-                  <template v-slot:prepend>
-                    <q-icon name="search" />
-                  </template>
-                </q-input>
-              </div>
-              <div class="col-xs-12 col-sm-6 col-md-4">
-                <q-select
-                  v-model="selectedRegion"
-                  :options="regionOptions"
-                  label="Filter by Region"
-                  outlined
-                  clearable
-                  dense
-                  bg-color="white"
-                >
-                  <template v-slot:prepend>
-                    <q-icon name="location_on" />
-                  </template>
-                </q-select>
-              </div>
-              <div class="col-xs-12 col-sm-6 col-md-4">
-                <q-select
-                  v-model="selectedStatus"
-                  :options="statusOptions"
-                  label="Filter by Status"
-                  outlined
-                  clearable
-                  dense
-                  bg-color="white"
-                >
-                  <template v-slot:prepend>
-                    <q-icon name="filter_list" />
-                  </template>
-                </q-select>
-              </div>
-            </div>
+          <div class="col-xs-12 col-sm-6 col-md-4">
+            <q-select
+              v-model="selectedRegion"
+              :options="regionOptions"
+              label="Filter by Region"
+              outlined
+              clearable
+              dense
+              bg-color="white"
+            >
+              <template v-slot:prepend>
+                <q-icon name="location_on" />
+              </template>
+            </q-select>
           </div>
-
-          <!-- Table -->
-          <q-table
-            :rows="filteredOutlets"
-            :columns="columns"
-            row-key="id"
-            :rows-per-page-options="[10, 20, 50]"
-            :loading="loading"
-            flat
-            bordered
-            class="outlet-table"
-          >
-            <template v-slot:body-cell-status="props">
-              <q-td :props="props">
-                <q-badge
-                  :color="props.row.isActive ? 'positive' : 'negative'"
-                  :label="props.row.isActive ? 'Active' : 'Inactive'"
-                />
-              </q-td>
-            </template>
-
-            <template v-slot:body-cell-totalOrder="props">
-              <q-td :props="props" class="text-right">
-                {{ props.value.toLocaleString() }}
-              </q-td>
-            </template>
-          </q-table>
+          <div class="col-xs-12 col-sm-6 col-md-4">
+            <q-select
+              v-model="selectedStatus"
+              :options="statusOptions"
+              label="Filter by Status"
+              outlined
+              clearable
+              dense
+              bg-color="white"
+            >
+              <template v-slot:prepend>
+                <q-icon name="filter_list" />
+              </template>
+            </q-select>
+          </div>
         </div>
-      </q-page>
-    </q-page-container>
-  </q-layout>
+      </div>
+
+      <!-- Table -->
+      <q-table
+        :rows="filteredOutlets"
+        :columns="columns"
+        row-key="id"
+        :rows-per-page-options="[10, 20, 50]"
+        :loading="loading"
+        flat
+        bordered
+        class="outlet-table"
+      >
+        <template v-slot:body-cell-status="props">
+          <q-td :props="props">
+            <q-badge
+              :color="props.row.isActive ? 'positive' : 'negative'"
+              :label="props.row.isActive ? 'Active' : 'Inactive'"
+            />
+          </q-td>
+        </template>
+
+        <template v-slot:body-cell-totalOrder="props">
+          <q-td :props="props" class="text-right">
+            {{ props.value.toLocaleString() }}
+          </q-td>
+        </template>
+      </q-table>
+    </div>
+  </q-page>
 </template>
 
 <script setup lang="ts">

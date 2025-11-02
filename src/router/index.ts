@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import DashboardLayout from '../layouts/DashboardLayout.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -9,14 +10,20 @@ const router = createRouter({
       component: () => import('../pages/LoginPage.vue'),
     },
     {
-      path: '/outlets',
-      name: 'outlets',
-      component: () => import('../pages/OutletListPage.vue'),
-    },
-    {
       path: '/dashboard',
-      name: 'dashboard',
-      component: () => import('../pages/DashboardPage.vue'),
+      component: DashboardLayout,
+      children: [
+        {
+          path: '',
+          name: 'dashboard',
+          component: () => import('../pages/DashboardPage.vue'),
+        },
+        {
+          path: 'outlets',
+          name: 'outlets',
+          component: () => import('../pages/OutletListPage.vue'),
+        },
+      ],
     },
   ],
 })
