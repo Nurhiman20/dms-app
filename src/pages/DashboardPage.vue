@@ -15,7 +15,18 @@
               <h2 class="chart-title">Total Sales per Region</h2>
             </div>
             <div class="chart-wrapper">
-              <Bar v-if="chartData" :data="chartData" :options="chartOptions" />
+              <div v-if="loading" class="chart-loading">
+                <q-spinner color="primary" size="48px" />
+                <p class="loading-text">Loading dashboard data...</p>
+              </div>
+              <div v-else-if="error" class="chart-error">
+                <q-icon name="error_outline" size="48px" color="negative" />
+                <p class="error-text">{{ error }}</p>
+              </div>
+              <Bar v-else-if="chartData" :data="chartData" :options="chartOptions" />
+              <div v-else class="chart-empty">
+                <p class="empty-text">No data available</p>
+              </div>
             </div>
           </q-card-section>
         </q-card>
@@ -25,7 +36,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { Bar } from "vue-chartjs";
 import {
   Chart as ChartJS,
@@ -36,41 +47,52 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import { useOutletStore } from "../stores/outlet";
+import { getDashboardStats, type RegionSalesStat } from "../services/dashboardApi";
 
 // Register Chart.js components
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
-const outletStore = useOutletStore();
+// Dashboard data state
+const dashboardStats = ref<RegionSalesStat[]>([]);
+const loading = ref<boolean>(false);
+const error = ref<string | null>(null);
 
-// Calculate total sales per region
-const salesByRegion = computed(() => {
-  const regionMap = new Map<string, number>();
+// Fetch dashboard statistics on component mount
+onMounted(async () => {
+  loading.value = true;
+  error.value = null;
 
-  outletStore.outlets.forEach((outlet) => {
-    const currentTotal = regionMap.get(outlet.region) || 0;
-    regionMap.set(outlet.region, currentTotal + outlet.totalOrder);
-  });
-
-  return {
-    labels: Array.from(regionMap.entries()).map(([region]) => region),
-    data: Array.from(regionMap.entries()).map(([, total]) => total),
-  };
+  try {
+    const response = await getDashboardStats();
+    if (response.success) {
+      dashboardStats.value = response.stats;
+    } else {
+      error.value = response.message || "Failed to fetch dashboard statistics";
+      dashboardStats.value = [];
+    }
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : "An error occurred while fetching dashboard statistics";
+    dashboardStats.value = [];
+  } finally {
+    loading.value = false;
+  }
 });
 
-// Prepare chart data
+// Prepare chart data from API response
 const chartData = computed(() => {
-  const { labels, data } = salesByRegion.value;
+  if (!dashboardStats.value || dashboardStats.value.length === 0) {
+    return null;
+  }
 
   return {
-    labels,
+    labels: dashboardStats.value.map((stat) => stat.region),
     datasets: [
       {
         label: "Total Sales",
         backgroundColor: "rgba(54, 162, 235, 0.8)",
         borderColor: "rgba(54, 162, 235, 1)",
         borderWidth: 1,
-        data,
+        data: dashboardStats.value.map((stat) => stat.totalSales),
       },
     ],
   };
@@ -150,6 +172,26 @@ const chartOptions = {
   position: relative
   height: 400px
   width: 100%
+
+.chart-loading,
+.chart-error,
+.chart-empty
+  display: flex
+  flex-direction: column
+  align-items: center
+  justify-content: center
+  height: 100%
+  width: 100%
+
+.loading-text,
+.error-text,
+.empty-text
+  margin-top: 16px
+  font-size: 14px
+  color: #6B7280
+
+.error-text
+  color: #DC2626
 
 @media (max-width: 599px)
   .chart-wrapper
