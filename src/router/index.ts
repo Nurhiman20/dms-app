@@ -23,6 +23,11 @@ const router = createRouter({
           name: 'outlets',
           component: () => import('../pages/OutletListPage.vue'),
         },
+        {
+          path: 'outlets/:id',
+          name: 'outlet-detail',
+          component: () => import('../pages/OutletDetailPage.vue'),
+        },
       ],
     },
   ],

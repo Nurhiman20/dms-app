@@ -67,6 +67,7 @@
         flat
         bordered
         class="outlet-table"
+        @row-click="handleRowClick"
       >
         <template v-slot:body-cell-status="props">
           <q-td :props="props">
@@ -89,7 +90,10 @@
 
 <script setup lang="ts">
 import { computed, onUnmounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useOutletStore, type Outlet } from '../stores/outlet'
+
+const router = useRouter()
 
 const outletStore = useOutletStore()
 const loading = ref<boolean>(false)
@@ -191,6 +195,10 @@ const columns = [
     sortable: true,
   },
 ]
+
+const handleRowClick = (evt: Event, row: Outlet) => {
+  router.push({ name: 'outlet-detail', params: { id: row.id } })
+}
 </script>
 
 <style scoped lang="sass">
@@ -246,4 +254,11 @@ const columns = [
   background-color: white
   border-radius: 8px
   overflow: hidden
+
+  :deep(tbody tr)
+    cursor: pointer
+    transition: background-color 0.2s
+
+    &:hover
+      background-color: #f5f5f5
 </style>
