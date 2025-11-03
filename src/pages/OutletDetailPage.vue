@@ -191,11 +191,18 @@ const route = useRoute()
 const outletStore = useOutletStore()
 const salesStore = useSalesStore()
 
-const loading = ref<boolean>(false)
 const outletId = computed(() => route.params.id as string)
 const showNewSaleDialog = ref<boolean>(false)
 
 const outlet = computed(() => outletStore.getOutletById(outletId.value))
+const loading = computed(() => outletStore.loading)
+
+// Fetch outlet if not found in store
+onMounted(async () => {
+  if (!outlet.value && outletId.value) {
+    await outletStore.fetchOutletById(outletId.value)
+  }
+})
 
 const sales = computed(() => {
   if (!outletId.value) return []

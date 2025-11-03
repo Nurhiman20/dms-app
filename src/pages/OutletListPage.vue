@@ -89,32 +89,60 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useOutletStore, type Outlet } from '../stores/outlet'
 
 const router = useRouter()
 
 const outletStore = useOutletStore()
-const loading = ref<boolean>(false)
-const searchQuery = ref<string>('')
+const searchQuery = ref<string | null>('')
 const debouncedSearchQuery = ref<string>('')
 const selectedRegion = ref<string | null>(null)
 const selectedStatus = ref<string | null>(null)
 
+// Use store's loading state
+const loading = computed(() => outletStore.loading)
+
+// Fetch outlets on mount
+onMounted(async () => {
+  if (outletStore.outlets.length === 0) {
+    await outletStore.fetchOutlets()
+  }
+})
+
 // Debounce function
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
-const debounceSearch = (value: string) => {
+const debounceSearch = (value: string | null | undefined) => {
+  // Clear any pending debounce
   if (debounceTimer) {
     clearTimeout(debounceTimer)
+    debounceTimer = null
   }
+  
+  // Normalize empty values (null, undefined, or empty string)
+  const normalizedValue = value == null || value === '' ? '' : value
+  
+  // If cleared (empty), update immediately without debounce
+  if (normalizedValue === '') {
+    debouncedSearchQuery.value = ''
+    return
+  }
+  
+  // Otherwise, debounce the search
   debounceTimer = setTimeout(() => {
-    debouncedSearchQuery.value = value
+    debouncedSearchQuery.value = normalizedValue
+    debounceTimer = null
   }, 300)
 }
 
 // Watch search query and debounce it
-watch(searchQuery, (newValue) => {
+watch(searchQuery, (newValue, oldValue) => {
+  // Immediately sync if clearing (going from non-empty to empty)
+  const isClearing = (oldValue && oldValue.trim()) && (!newValue || !newValue.trim())
+  if (isClearing) {
+    debouncedSearchQuery.value = ''
+  }
   debounceSearch(newValue)
 })
 
