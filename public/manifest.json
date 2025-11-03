@@ -1,7 +1,7 @@
 {
-    "name": "DMS App - Document Management System",
+    "name": "DMS App - Distributor Management System",
     "short_name": "DMS App",
-    "description": "Document Management System Application",
+    "description": "Distributor Management System Application",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#ffffff",

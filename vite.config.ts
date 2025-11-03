@@ -22,9 +22,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'images/*.webp', 'icons/*.png', 'icons/*.ico'],
       manifest: {
-        name: 'DMS App - Document Management System',
+        name: 'DMS App - Distributor Management System',
         short_name: 'DMS App',
-        description: 'Document Management System Application',
+        description: 'Distributor Management System Application',
         theme_color: '#1976D2',
         background_color: '#ffffff',
         display: 'standalone',
