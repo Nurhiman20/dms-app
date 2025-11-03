@@ -1,0 +1,39 @@
+{
+    "name": "DMS App - Document Management System",
+    "short_name": "DMS App",
+    "description": "Document Management System Application",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#1976D2",
+    "orientation": "portrait-primary",
+    "scope": "/",
+    "icons": [{
+        "src": "/favicon.ico",
+        "sizes": "any",
+        "type": "image/x-icon",
+        "purpose": "any maskable"
+    }],
+    "categories": ["business", "productivity"],
+    "shortcuts": [{
+            "name": "Dashboard",
+            "short_name": "Dashboard",
+            "description": "View dashboard",
+            "url": "/dashboard",
+            "icons": [{
+                "src": "/favicon.ico",
+                "sizes": "48x48"
+            }]
+        },
+        {
+            "name": "Outlets",
+            "short_name": "Outlets",
+            "description": "View outlets",
+            "url": "/dashboard/outlets",
+            "icons": [{
+                "src": "/favicon.ico",
+                "sizes": "48x48"
+            }]
+        }
+    ]
+}

@@ -36,6 +36,7 @@ const router = createRouter({
 
 /**
  * Check if user is authenticated by verifying token in localStorage
+ * Works offline - uses cached credentials
  */
 function isAuthenticated(): boolean {
   const token = localStorage.getItem('token');

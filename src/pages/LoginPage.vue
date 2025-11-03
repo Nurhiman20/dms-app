@@ -90,6 +90,26 @@ const handleLogin = async () => {
   errorMessage.value = null;
 
   try {
+    // Check if already authenticated and offline - allow access with cached credentials
+    const existingUser = localStorage.getItem("user");
+    const existingToken = localStorage.getItem("token");
+    const { checkNetworkStatus } = await import("../utils/networkStatus");
+    const isOnline = await checkNetworkStatus();
+
+    if (!isOnline && existingUser && existingToken) {
+      // Offline but already authenticated - allow access
+      const user = JSON.parse(existingUser);
+      $q.notify({
+        type: "info",
+        message: `Welcome back, ${user.name}! (Offline mode)`,
+        position: "top",
+      });
+      router.push({ name: "dashboard" });
+      isLoading.value = false;
+      return;
+    }
+
+    // Try to login online
     const response = await login({ role: selectedRole.value });
 
     if (response.success) {
@@ -108,6 +128,31 @@ const handleLogin = async () => {
       router.push({ name: "dashboard" });
     }
   } catch (error) {
+    // If offline and login fails, check if we can use cached credentials
+    const existingUser = localStorage.getItem("user");
+    const existingToken = localStorage.getItem("token");
+
+    if (existingUser && existingToken) {
+      // Use cached credentials
+      try {
+        const { checkNetworkStatus } = await import("../utils/networkStatus");
+        const isOnline = await checkNetworkStatus();
+        if (!isOnline) {
+          const user = JSON.parse(existingUser);
+          $q.notify({
+            type: "info",
+            message: `Using cached credentials. Welcome, ${user.name}! (Offline mode)`,
+            position: "top",
+          });
+          router.push({ name: "dashboard" });
+          isLoading.value = false;
+          return;
+        }
+      } catch {
+        // Continue to error handling
+      }
+    }
+
     const message =
       error instanceof Error ? error.message : "Login failed. Please try again.";
     errorMessage.value = message;

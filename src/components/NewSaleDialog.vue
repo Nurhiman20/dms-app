@@ -109,8 +109,10 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { QForm, QInput, QSelect } from 'quasar'
+import { QForm, QInput, QSelect, useQuasar } from 'quasar'
 import { useSalesStore, type Sale } from '../stores/sales'
+import { checkNetworkStatus } from '../utils/networkStatus'
+import { offlineQueue } from '../utils/offlineQueue'
 
 interface Props {
   modelValue: boolean
@@ -124,6 +126,7 @@ const emit = defineEmits<{
 }>()
 
 const salesStore = useSalesStore()
+const $q = useQuasar()
 
 const formRef = ref<QForm | null>(null)
 const dateInputRef = ref<QInput | null>(null)
@@ -216,7 +219,7 @@ const onSubmit = async () => {
     return
   }
 
-  const newSale = salesStore.addSale({
+  const saleData = {
     outletId: props.outletId,
     date: form.value.date || '',
     productName: form.value.productName || '',
@@ -225,7 +228,45 @@ const onSubmit = async () => {
     totalAmount: form.value.totalAmount!,
     customerName: form.value.customerName || '',
     paymentMethod: form.value.paymentMethod || '',
-  })
+  }
+
+  // Add sale to local store (works offline)
+  const newSale = await salesStore.addSale(saleData)
+
+  // Check if offline and queue for sync
+  const isOnline = await checkNetworkStatus()
+  if (!isOnline) {
+    // Queue the operation for sync when online
+    try {
+      await offlineQueue.enqueue({
+        type: 'create',
+        entity: 'sale',
+        data: newSale,
+      })
+      
+      $q.notify({
+        type: 'info',
+        message: 'Sale created and queued for sync when online',
+        position: 'top',
+        timeout: 3000,
+      })
+    } catch (error) {
+      console.error('[NewSaleDialog] Failed to queue operation:', error)
+      $q.notify({
+        type: 'warning',
+        message: 'Sale created locally but failed to queue for sync',
+        position: 'top',
+      })
+    }
+  } else {
+    // Online - try to sync immediately (in a real app, this would call the API)
+    // For now, we just show success
+    $q.notify({
+      type: 'positive',
+      message: 'Sale created successfully',
+      position: 'top',
+    })
+  }
 
   emit('sale-created', newSale)
   emit('update:modelValue', false)

@@ -1,13 +1,31 @@
 <!DOCTYPE html>
-<html lang="">
-  <head>
-    <meta charset="UTF-8">
-    <link rel="icon" href="/favicon.ico">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vite App</title>
-  </head>
-  <body>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="description" content="Document Management System Application" />
+    <meta name="theme-color" content="#1976D2" />
+
+    <!-- PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="DMS App" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <!-- Manifest and Service Worker will be auto-injected by vite-plugin-pwa -->
+    <!-- Preload favicon for faster loading -->
+    <link rel="preload" href="/favicon.ico" as="image" type="image/x-icon" />
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="/favicon.ico" />
+
+    <title>DMS App - Document Management System</title>
+</head>
+
+<body>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
-  </body>
+</body>
+
 </html>

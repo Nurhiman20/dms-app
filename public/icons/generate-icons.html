@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>PWA Icon Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        
+        canvas {
+            border: 1px solid #ccc;
+            margin: 20px 0;
+        }
+        
+        button {
+            background: #1976D2;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        button:hover {
+            background: #1565C0;
+        }
+        
+        .info {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>PWA Icon Generator for DMS App</h1>
+    <div class="info">
+        <p>This tool generates PWA icons (192x192 and 512x512) for your app.</p>
+        <p>Click "Generate Icons" to create and download the icons.</p>
+    </div>
+
+    <canvas id="icon192" width="192" height="192"></canvas>
+    <canvas id="icon512" width="512" height="512"></canvas>
+
+    <div>
+        <button onclick="generateIcons()">Generate Icons</button>
+    </div>
+
+    <script>
+        function generateIcons() {
+            // Create 192x192 icon
+            const canvas192 = document.getElementById('icon192');
+            const ctx192 = canvas192.getContext('2d');
+
+            // Background
+            ctx192.fillStyle = '#1976D2';
+            ctx192.fillRect(0, 0, 192, 192);
+
+            // Text "DMS"
+            ctx192.fillStyle = '#ffffff';
+            ctx192.font = 'bold 80px Arial';
+            ctx192.textAlign = 'center';
+            ctx192.textBaseline = 'middle';
+            ctx192.fillText('DMS', 96, 96);
+
+            // Create 512x512 icon
+            const canvas512 = document.getElementById('icon512');
+            const ctx512 = canvas512.getContext('2d');
+
+            // Background
+            ctx512.fillStyle = '#1976D2';
+            ctx512.fillRect(0, 0, 512, 512);
+
+            // Text "DMS"
+            ctx512.fillStyle = '#ffffff';
+            ctx512.font = 'bold 200px Arial';
+            ctx512.textAlign = 'center';
+            ctx512.textBaseline = 'middle';
+            ctx512.fillText('DMS', 256, 256);
+
+            // Download icons
+            canvas192.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'icon-192x192.png';
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+
+            setTimeout(() => {
+                canvas512.toBlob(function(blob) {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'icon-512x512.png';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                });
+            }, 500);
+
+            alert('Icons generated! Save them to public/icons/ directory');
+        }
+    </script>
+</body>
+
+</html>

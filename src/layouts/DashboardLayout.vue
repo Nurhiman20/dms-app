@@ -8,6 +8,7 @@
 
     <!-- Main Content -->
     <q-page-container class="bg-grey-1">
+      <OfflineIndicator />
       <router-view />
     </q-page-container>
   </q-layout>
@@ -17,6 +18,7 @@
 import { ref } from "vue";
 import DashboardNavbar from "../components/DashboardNavbar.vue";
 import DashboardSidebar from "../components/DashboardSidebar.vue";
+import OfflineIndicator from "../components/OfflineIndicator.vue";
 
 const leftDrawerOpen = ref(false);
 

@@ -66,13 +66,31 @@ onMounted(async () => {
     const response = await getDashboardStats();
     if (response.success) {
       dashboardStats.value = response.stats;
+      // Only show error message if it's a real error, not just offline mode
+      if (response.message?.includes('offline mode') || response.message?.includes('cached')) {
+        // Don't show error for offline mode - it's expected behavior
+        error.value = null;
+      }
     } else {
       error.value = response.message || "Failed to fetch dashboard statistics";
       dashboardStats.value = [];
     }
   } catch (err) {
-    error.value = err instanceof Error ? err.message : "An error occurred while fetching dashboard statistics";
-    dashboardStats.value = [];
+    // Try to load from cache as last resort
+    try {
+      const { db } = await import('../utils/db');
+      const cached = await db.dashboardStats.get('current');
+      if (cached) {
+        dashboardStats.value = cached.stats;
+        error.value = null;
+      } else {
+        error.value = err instanceof Error ? err.message : "An error occurred while fetching dashboard statistics";
+        dashboardStats.value = [];
+      }
+    } catch {
+      error.value = err instanceof Error ? err.message : "An error occurred while fetching dashboard statistics";
+      dashboardStats.value = [];
+    }
   } finally {
     loading.value = false;
   }

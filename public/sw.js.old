@@ -1,0 +1,306 @@
+/**
+ * Service Worker for DMS App
+ * Caches app shell and enables offline functionality
+ */
+
+const CACHE_VERSION = 'v1';
+const APP_SHELL_CACHE = `dms-app-shell-${CACHE_VERSION}`;
+const RUNTIME_CACHE = `dms-runtime-${CACHE_VERSION}`;
+
+// Files to cache immediately (app shell)
+const APP_SHELL_FILES = [
+  '/',
+  '/index.html',
+  '/favicon.ico',
+  '/manifest.json',
+];
+
+// Network-first resources (API calls, dynamic content)
+const NETWORK_FIRST_PATTERNS = [
+  /\/api\//,
+];
+
+// Cache-first resources (static assets)
+const CACHE_FIRST_PATTERNS = [
+  /\.(js|mjs|css|png|jpg|jpeg|gif|svg|webp|woff|woff2|ttf|eot|ico)$/i,
+];
+
+/**
+ * Install event - cache app shell
+ */
+self.addEventListener('install', (event) => {
+  console.log('[ServiceWorker] Install event - PWA installation');
+
+  event.waitUntil(
+    caches.open(APP_SHELL_CACHE).then((cache) => {
+      console.log('[ServiceWorker] Caching app shell and PWA files');
+      return Promise.allSettled(
+        APP_SHELL_FILES.map(file =>
+          cache.add(new Request(file, { cache: 'reload' }))
+            .catch((err) => {
+              console.warn(`[ServiceWorker] Failed to cache ${file}:`, err);
+              return null;
+            })
+        )
+      ).then(() => {
+        console.log('[ServiceWorker] App shell cached successfully');
+      });
+    })
+  );
+
+  // Force activation for PWA
+  self.skipWaiting();
+});
+
+/**
+ * Activate event - clean up old caches
+ */
+self.addEventListener('activate', (event) => {
+  console.log('[ServiceWorker] Activate event');
+
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (
+            cacheName !== APP_SHELL_CACHE &&
+            cacheName !== RUNTIME_CACHE &&
+            cacheName !== CACHE_NAME
+          ) {
+            console.log('[ServiceWorker] Deleting old cache:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
+
+  // Take control immediately
+  return self.clients.claim();
+});
+
+/**
+ * Fetch event - serve from cache when offline
+ */
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
+
+  // Skip non-GET requests
+  if (request.method !== 'GET') {
+    return;
+  }
+
+  // Skip chrome-extension and other non-http(s) requests
+  if (!url.protocol.startsWith('http')) {
+    return;
+  }
+
+  // Skip Vite development-only virtual modules (these don't work offline)
+  if (url.pathname.includes('@vite/client') ||
+    url.pathname.includes('@id/virtual:') ||
+    url.pathname.includes('/@fs/') ||
+    url.pathname.includes('/@vite/') ||
+    url.pathname.includes('vue-devtools') ||
+    url.pathname.includes('vue-inspector')) {
+    // Let these requests fail naturally - they're dev-only
+    return;
+  }
+
+  // Handle navigation requests (page loads)
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      caches.match('/index.html')
+        .then((cachedHtml) => {
+          // If we have cached HTML, return it immediately for faster offline loading
+          if (cachedHtml) {
+            // Try to fetch fresh version in background
+            fetch(request)
+              .then((response) => {
+                if (response.ok) {
+                  const responseClone = response.clone();
+                  caches.open(APP_SHELL_CACHE).then((cache) => {
+                    cache.put(request, responseClone);
+                  });
+                }
+              })
+              .catch(() => {
+                // Ignore fetch errors - we have cached version
+              });
+            return cachedHtml;
+          }
+
+          // No cache, try network
+          return fetch(request)
+            .then((response) => {
+              // Cache the HTML
+              if (response.ok) {
+                const responseClone = response.clone();
+                caches.open(APP_SHELL_CACHE).then((cache) => {
+                  cache.put(request, responseClone);
+                });
+              }
+              return response;
+            })
+            .catch(() => {
+              // Network failed and no cache - return basic offline page
+              return new Response(
+                '<!DOCTYPE html><html><head><title>Offline</title></head><body><h1>You are offline</h1><p>Please check your internet connection and try again.</p></body></html>', { headers: { 'Content-Type': 'text/html' } }
+              );
+            });
+        })
+    );
+    return;
+  }
+
+  // Check if it's an API call (network-first)
+  const isNetworkFirst = NETWORK_FIRST_PATTERNS.some(pattern => pattern.test(url.pathname));
+
+  if (isNetworkFirst) {
+    // Network-first strategy for API calls
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          // Cache successful responses
+          if (response.ok) {
+            const responseClone = response.clone();
+            caches.open(RUNTIME_CACHE).then((cache) => {
+              cache.put(request, responseClone);
+            });
+          }
+          return response;
+        })
+        .catch(() => {
+          // Fallback to cache if network fails
+          return caches.match(request).then((cachedResponse) => {
+            return cachedResponse || new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
+          });
+        })
+    );
+    return;
+  }
+
+  // Cache-first strategy for static assets (JS, CSS, images, etc.)
+  // Note: In dev mode, /src/ files are served by Vite and may not be cacheable
+  // In production, these are bundled into /assets/
+  const isStaticAsset = CACHE_FIRST_PATTERNS.some(pattern => pattern.test(url.pathname)) ||
+    url.pathname.startsWith('/assets/') ||
+    url.pathname.startsWith('/images/');
+
+  if (isStaticAsset) {
+    event.respondWith(
+      caches.match(request)
+        .then((cachedResponse) => {
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+
+          // Fetch from network and cache
+          return fetch(request)
+            .then((response) => {
+              // Only cache valid responses
+              if (response && response.status === 200 && response.type === 'basic') {
+                const responseToCache = response.clone();
+                caches.open(APP_SHELL_CACHE).then((cache) => {
+                  cache.put(request, responseToCache);
+                });
+              }
+
+              return response;
+            })
+            .catch(() => {
+              // For critical assets, try to return something reasonable
+              // For images, return a transparent 1x1 pixel
+              if (url.pathname.match(/\.(png|jpg|jpeg|gif|svg|webp)$/i)) {
+                // Return a minimal placeholder image
+                return new Response('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>', {
+                  headers: { 'Content-Type': 'image/svg+xml' }
+                });
+              }
+
+              // For other assets, let them fail (app should still work)
+              return new Response('', { status: 503, statusText: 'Service Unavailable' });
+            });
+        })
+    );
+    return;
+  }
+
+  // Handle /src/ requests (dev mode only - will fail offline, but that's OK)
+  if (url.pathname.startsWith('/src/')) {
+    // In dev mode, these are handled by Vite dev server
+    // In production, they're bundled into /assets/
+    // Let them pass through without service worker handling
+    // If offline, they'll fail, but the app should still work with cached bundle
+    return;
+  }
+
+  // Handle manifest.json and other PWA files
+  if (url.pathname === '/manifest.json' || url.pathname.startsWith('/icons/')) {
+    event.respondWith(
+      caches.match(request)
+        .then((cachedResponse) => {
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+          return fetch(request)
+            .then((response) => {
+              if (response.ok) {
+                const responseClone = response.clone();
+                caches.open(APP_SHELL_CACHE).then((cache) => {
+                  cache.put(request, responseClone);
+                });
+              }
+              return response;
+            })
+            .catch(() => {
+              // Return empty manifest if fetch fails
+              if (url.pathname === '/manifest.json') {
+                return new Response('{}', {
+                  headers: { 'Content-Type': 'application/json' }
+                });
+              }
+              return new Response('', { status: 404 });
+            });
+        })
+    );
+    return;
+  }
+
+  // Default: network-first with cache fallback for other requests
+  event.respondWith(
+    fetch(request)
+      .then((response) => {
+        // Cache successful responses
+        if (response.ok) {
+          const responseClone = response.clone();
+          caches.open(RUNTIME_CACHE).then((cache) => {
+            cache.put(request, responseClone);
+          });
+        }
+        return response;
+      })
+      .catch(() => {
+        return caches.match(request).then((cachedResponse) => {
+          return cachedResponse || new Response('Offline', { status: 503 });
+        });
+      })
+  );
+});
+
+/**
+ * Message handler for cache updates
+ */
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+
+  if (event.data && event.data.type === 'CACHE_URLS') {
+    event.waitUntil(
+      caches.open(APP_SHELL_CACHE).then((cache) => {
+        return cache.addAll(event.data.urls);
+      })
+    );
+  }
+});
