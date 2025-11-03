@@ -10,6 +10,14 @@ import router from './router'
 import { setupNetworkListeners } from './utils/networkStatus'
 import { db } from './utils/db'
 
+// Initialize theme before app creation to avoid flash
+const savedTheme = localStorage.getItem('theme')
+if (savedTheme) {
+  // Apply theme immediately by setting the class on body
+  // This prevents flash of wrong theme on initial load
+  document.body.classList.toggle('body--dark', savedTheme === 'dark')
+}
+
 const app = createApp(App)
 
 app.use(createPinia())

@@ -41,7 +41,7 @@
         </div>
 
         <!-- Outlet Info Card -->
-        <q-card flat bordered class="outlet-info-card q-mb-lg">
+        <q-card flat bordered :class="['outlet-info-card', 'q-mb-lg', cardClass]">
           <q-card-section>
             <div class="outlet-info-header q-mb-md">
               <h2 class="outlet-info-title">Outlet Information</h2>
@@ -85,7 +85,7 @@
         </q-card>
 
         <!-- Sales Summary Card -->
-        <q-card flat bordered class="sales-summary-card q-mb-lg" v-if="sales.length > 0">
+        <q-card flat bordered :class="['sales-summary-card', 'q-mb-lg', cardClass]" v-if="sales.length > 0">
           <q-card-section>
             <div class="sales-summary-header q-mb-md">
               <h2 class="sales-summary-title">Sales Summary</h2>
@@ -132,7 +132,7 @@
               :loading="loading"
               flat
               bordered
-              class="sales-table"
+              :class="['sales-table', cardClass]"
             >
               <template v-slot:body-cell-date="props">
                 <q-td :props="props">
@@ -183,13 +183,20 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import { useQuasar } from 'quasar'
 import { useOutletStore } from '../stores/outlet'
 import { useSalesStore, type Sale } from '../stores/sales'
 import NewSaleDialog from '../components/NewSaleDialog.vue'
 
 const route = useRoute()
+const $q = useQuasar()
 const outletStore = useOutletStore()
 const salesStore = useSalesStore()
+
+// Theme-aware card background
+const cardClass = computed(() => {
+  return $q.dark.isActive ? 'bg-grey-9' : 'bg-white'
+})
 
 const outletId = computed(() => route.params.id as string)
 const showNewSaleDialog = ref<boolean>(false)
@@ -312,7 +319,6 @@ onMounted(() => {
 .outlet-detail-title
   font-size: 28px
   font-weight: 700
-  color: #1D1D1D
   margin: 0 0 8px 0
   line-height: 1.4
 
@@ -324,7 +330,6 @@ onMounted(() => {
 .outlet-info-card,
 .sales-summary-card,
 .sales-table-card
-  background-color: white
   border-radius: 8px
   overflow: hidden
 
@@ -338,7 +343,6 @@ onMounted(() => {
 .sales-table-title
   font-size: 20px
   font-weight: 600
-  color: #1D1D1D
   margin: 0
 
 .outlet-info-grid
@@ -360,7 +364,6 @@ onMounted(() => {
 
 .info-value
   font-size: 16px
-  color: #1D1D1D
   font-weight: 600
 
 .sales-summary-grid
@@ -380,7 +383,6 @@ onMounted(() => {
 
 .summary-value
   font-size: 24px
-  color: #1D1D1D
   font-weight: 700
 
 .summary-value.primary
@@ -390,7 +392,6 @@ onMounted(() => {
   font-weight: 700
 
 .sales-table
-  background-color: white
   border-radius: 8px
   overflow: hidden
 

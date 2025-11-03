@@ -6,7 +6,7 @@
     bordered
     :width="280"
     :breakpoint="1024"
-    class="bg-white"
+    :class="drawerClass"
   >
     <q-scroll-area class="fit">
       <q-list padding class="menu-list">
@@ -80,6 +80,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useQuasar } from "quasar";
 import { logout } from "../services/authApi";
@@ -95,6 +96,11 @@ defineEmits<{
 const route = useRoute();
 const router = useRouter();
 const $q = useQuasar();
+
+// Theme-aware drawer background
+const drawerClass = computed(() => {
+  return $q.dark.isActive ? "bg-grey-9" : "bg-white";
+});
 
 const handleLogout = async () => {
   try {

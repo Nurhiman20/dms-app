@@ -9,7 +9,7 @@
 
       <!-- Chart Container -->
       <div class="chart-container">
-        <q-card flat bordered class="chart-card">
+        <q-card flat bordered :class="['chart-card', cardClass]">
           <q-card-section>
             <div class="chart-header q-mb-md">
               <h2 class="chart-title">Total Sales per Region</h2>
@@ -37,6 +37,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
+import { useQuasar } from "quasar";
 import { Bar } from "vue-chartjs";
 import {
   Chart as ChartJS,
@@ -48,6 +49,13 @@ import {
   Legend,
 } from "chart.js";
 import { getDashboardStats, type RegionSalesStat } from "../services/dashboardApi";
+
+const $q = useQuasar();
+
+// Theme-aware card background
+const cardClass = computed(() => {
+  return $q.dark.isActive ? 'bg-grey-9' : 'bg-white';
+});
 
 // Register Chart.js components
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
@@ -116,37 +124,75 @@ const chartData = computed(() => {
   };
 });
 
-// Chart options
-const chartOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: {
-      display: true,
-      position: "top" as const,
-    },
-    title: {
-      display: false,
-    },
-    tooltip: {
-      callbacks: {
-        label: function (context: any) {
-          return `Sales: ${context.parsed.y.toLocaleString()}`;
+// Theme-aware chart options
+const chartOptions = computed(() => {
+  const isDark = $q.dark.isActive;
+  const textColor = isDark ? '#e0e0e0' : '#212121';
+  const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+  const tooltipBg = isDark ? 'rgba(30, 30, 30, 0.9)' : 'rgba(255, 255, 255, 0.95)';
+  const tooltipText = isDark ? '#e0e0e0' : '#212121';
+  const tooltipBorder = isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)';
+
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: true,
+        position: "top" as const,
+        labels: {
+          color: textColor,
+          font: {
+            size: 12,
+          },
+        },
+      },
+      title: {
+        display: false,
+      },
+      tooltip: {
+        backgroundColor: tooltipBg,
+        titleColor: tooltipText,
+        bodyColor: tooltipText,
+        borderColor: tooltipBorder,
+        borderWidth: 1,
+        callbacks: {
+          label: function (context: any) {
+            return `Sales: ${context.parsed.y.toLocaleString()}`;
+          },
         },
       },
     },
-  },
-  scales: {
-    y: {
-      beginAtZero: true,
-      ticks: {
-        callback: function (value: any) {
-          return value.toLocaleString();
+    scales: {
+      x: {
+        ticks: {
+          color: textColor,
+          font: {
+            size: 11,
+          },
+        },
+        grid: {
+          color: gridColor,
+        },
+      },
+      y: {
+        beginAtZero: true,
+        ticks: {
+          color: textColor,
+          font: {
+            size: 11,
+          },
+          callback: function (value: any) {
+            return value.toLocaleString();
+          },
+        },
+        grid: {
+          color: gridColor,
         },
       },
     },
-  },
-};
+  };
+});
 </script>
 
 <style scoped lang="sass">
@@ -160,7 +206,6 @@ const chartOptions = {
 .dashboard-title
   font-size: 28px
   font-weight: 700
-  color: #1D1D1D
   margin: 0 0 8px 0
   line-height: 1.4
 
@@ -173,7 +218,6 @@ const chartOptions = {
   width: 100%
 
 .chart-card
-  background-color: white
   border-radius: 8px
   overflow: hidden
 
@@ -183,7 +227,6 @@ const chartOptions = {
 .chart-title
   font-size: 20px
   font-weight: 600
-  color: #1D1D1D
   margin: 0
 
 .chart-wrapper

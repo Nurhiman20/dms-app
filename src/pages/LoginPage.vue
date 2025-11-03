@@ -29,7 +29,6 @@
                   label="Select Role"
                   outlined
                   class="q-mb-md"
-                  bg-color="white"
                   :dense="false"
                   options-dense
                 >
@@ -182,7 +181,6 @@ const handleLogin = async () => {
   display: flex
   align-items: center
   justify-content: center
-  background-color: #ffffff
   min-height: 100vh
   padding: 0
 
@@ -229,7 +227,6 @@ const handleLogin = async () => {
 .login-title
   font-size: 32px
   font-weight: 700
-  color: #1D1D1D
   margin: 0 0 8px 0
   text-align: center
   line-height: 1.4

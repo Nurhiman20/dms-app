@@ -32,7 +32,6 @@
               outlined
               clearable
               dense
-              bg-color="white"
             >
               <template v-slot:prepend>
                 <q-icon name="location_on" />
@@ -47,7 +46,6 @@
               outlined
               clearable
               dense
-              bg-color="white"
             >
               <template v-slot:prepend>
                 <q-icon name="filter_list" />
@@ -240,7 +238,6 @@ const handleRowClick = (evt: Event, row: Outlet) => {
 .outlet-list-title
   font-size: 28px
   font-weight: 700
-  color: #1D1D1D
   margin: 0 0 8px 0
   line-height: 1.4
 
@@ -276,10 +273,8 @@ const handleRowClick = (evt: Event, row: Outlet) => {
     min-width: 0
 
 .outlet-search-input
-  background-color: white
 
 .outlet-table
-  background-color: white
   border-radius: 8px
   overflow: hidden
 
@@ -288,5 +283,5 @@ const handleRowClick = (evt: Event, row: Outlet) => {
     transition: background-color 0.2s
 
     &:hover
-      background-color: #f5f5f5
+      background-color: rgba(128, 128, 128, 0.1)
 </style>
