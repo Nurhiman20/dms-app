@@ -114,8 +114,15 @@
         <!-- Sales Table -->
         <q-card flat bordered class="sales-table-card">
           <q-card-section>
-            <div class="sales-table-header q-mb-md">
+            <div class="sales-table-header q-mb-md row items-center justify-between">
               <h2 class="sales-table-title">Sales Records</h2>
+              <q-btn
+                color="primary"
+                icon="add"
+                label="New Sale"
+                @click="showNewSaleDialog = true"
+                unelevated
+              />
             </div>
             <q-table
               :rows="sales"
@@ -167,6 +174,9 @@
         </q-card>
       </div>
     </div>
+
+    <!-- New Sale Dialog -->
+    <NewSaleDialog v-model="showNewSaleDialog" :outlet-id="outletId || ''" />
   </q-page>
 </template>
 
@@ -175,6 +185,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { useOutletStore } from '../stores/outlet'
 import { useSalesStore, type Sale } from '../stores/sales'
+import NewSaleDialog from '../components/NewSaleDialog.vue'
 
 const route = useRoute()
 const outletStore = useOutletStore()
@@ -182,6 +193,7 @@ const salesStore = useSalesStore()
 
 const loading = ref<boolean>(false)
 const outletId = computed(() => route.params.id as string)
+const showNewSaleDialog = ref<boolean>(false)
 
 const outlet = computed(() => outletStore.getOutletById(outletId.value))
 

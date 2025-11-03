@@ -246,6 +246,15 @@ export const useSalesStore = defineStore('sales', () => {
     return sales.value.filter(sale => sale.outletId === outletId)
   }
 
+  function addSale(sale: Omit<Sale, 'id'>): Sale {
+    const newSale: Sale = {
+      ...sale,
+      id: `s${Date.now()}`, // Generate unique ID based on timestamp
+    }
+    sales.value.push(newSale)
+    return newSale
+  }
+
   const totalSalesByOutlet = computed(() => {
     const totals = new Map<string, number>()
     sales.value.forEach(sale => {
@@ -258,6 +267,7 @@ export const useSalesStore = defineStore('sales', () => {
   return {
     sales,
     getSalesByOutletId,
+    addSale,
     totalSalesByOutlet,
   }
 })
