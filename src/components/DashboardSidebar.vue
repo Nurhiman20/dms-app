@@ -6,7 +6,7 @@
     bordered
     :width="280"
     :breakpoint="1024"
-    class="bg-grey-1"
+    class="bg-white"
   >
     <q-scroll-area class="fit">
       <q-list padding class="menu-list">
