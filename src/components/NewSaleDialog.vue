@@ -61,16 +61,13 @@
 
           <q-input
             ref="totalAmountInputRef"
-            v-model.number="form.totalAmount"
+            :model-value="totalAmount"
             label="Total Amount *"
             type="number"
             outlined
             dense
             prefix="Rp"
-            :rules="[
-              (val) => (val !== null && val !== '') || 'Total amount is required',
-              (val) => val > 0 || 'Total amount must be greater than 0',
-            ]"
+            readonly
           />
 
           <q-input
@@ -108,7 +105,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { QForm, QInput, QSelect, useQuasar } from 'quasar'
 import { useSalesStore, type Sale } from '../stores/sales'
 import { checkNetworkStatus } from '../utils/networkStatus'
@@ -144,9 +141,20 @@ const form = ref({
   productName: '',
   quantity: null as number | null,
   unitPrice: null as number | null,
-  totalAmount: null as number | null,
   customerName: '',
   paymentMethod: '',
+})
+
+// Calculate totalAmount automatically from quantity and unitPrice
+const totalAmount = computed(() => {
+  if (form.value.quantity !== null && form.value.unitPrice !== null) {
+    const qty = Number(form.value.quantity)
+    const price = Number(form.value.unitPrice)
+    if (qty > 0 && price > 0) {
+      return qty * price
+    }
+  }
+  return null
 })
 
 // Reset form when dialog opens
@@ -157,7 +165,6 @@ watch(() => props.modelValue, (isOpen) => {
       productName: '',
       quantity: null,
       unitPrice: null,
-      totalAmount: null,
       customerName: '',
       paymentMethod: '',
     }
@@ -184,7 +191,9 @@ const validateAllFields = async (): Promise<boolean> => {
     isValid = false
   }
 
-  if (form.value.totalAmount === null || form.value.totalAmount <= 0) {
+  // totalAmount is computed from quantity * unitPrice, so no need to validate separately
+  // But we should check that it's valid (both quantity and unitPrice are valid)
+  if (totalAmount.value === null || totalAmount.value <= 0) {
     isValid = false
   }
 
@@ -201,7 +210,6 @@ const validateAllFields = async (): Promise<boolean> => {
     productNameInputRef.value?.validate(),
     quantityInputRef.value?.validate(),
     unitPriceInputRef.value?.validate(),
-    totalAmountInputRef.value?.validate(),
     customerNameInputRef.value?.validate(),
     paymentMethodSelectRef.value?.validate(),
   ])
@@ -225,7 +233,7 @@ const onSubmit = async () => {
     productName: form.value.productName || '',
     quantity: form.value.quantity!,
     unitPrice: form.value.unitPrice!,
-    totalAmount: form.value.totalAmount!,
+    totalAmount: totalAmount.value!,
     customerName: form.value.customerName || '',
     paymentMethod: form.value.paymentMethod || '',
   }
@@ -243,7 +251,7 @@ const onSubmit = async () => {
         entity: 'sale',
         data: newSale,
       })
-      
+
       $q.notify({
         type: 'info',
         message: 'Sale created and queued for sync when online',
