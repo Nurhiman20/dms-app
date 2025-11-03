@@ -43,11 +43,21 @@
                   unelevated
                   color="primary"
                   size="md"
-                  label="Login"
+                  :label="isLoading ? 'Logging in...' : 'Login'"
                   class="full-width login-button q-mb-lg"
-                  :disable="!selectedRole"
+                  :disable="!selectedRole || isLoading"
+                  :loading="isLoading"
                   @click="handleLogin"
                 />
+
+                <!-- Error Message -->
+                <q-banner
+                  v-if="errorMessage"
+                  class="bg-negative text-white q-mt-md"
+                  rounded
+                >
+                  {{ errorMessage }}
+                </q-banner>
               </div>
             </div>
           </div>
@@ -59,14 +69,55 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
+import { useRouter } from "vue-router";
+import { useQuasar } from "quasar";
+import { login } from "../services/authApi";
+
+const router = useRouter();
+const $q = useQuasar();
 
 const selectedRole = ref<string | null>(null);
 const roleOptions = ["Admin", "Sales"];
+const isLoading = ref(false);
+const errorMessage = ref<string | null>(null);
 
-const handleLogin = () => {
-  if (selectedRole.value) {
-    console.log("Login with role:", selectedRole.value);
-    // TODO: Implement login logic
+const handleLogin = async () => {
+  if (!selectedRole.value) {
+    return;
+  }
+
+  isLoading.value = true;
+  errorMessage.value = null;
+
+  try {
+    const response = await login({ role: selectedRole.value });
+
+    if (response.success) {
+      // Show success notification
+      $q.notify({
+        type: "positive",
+        message: `Welcome, ${response.user.name}!`,
+        position: "top",
+      });
+
+      // Store user info in localStorage (or use a store)
+      localStorage.setItem("user", JSON.stringify(response.user));
+      localStorage.setItem("token", response.token);
+
+      // Navigate to dashboard
+      router.push({ name: "dashboard" });
+    }
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Login failed. Please try again.";
+    errorMessage.value = message;
+    $q.notify({
+      type: "negative",
+      message: message,
+      position: "top",
+    });
+  } finally {
+    isLoading.value = false;
   }
 };
 </script>
