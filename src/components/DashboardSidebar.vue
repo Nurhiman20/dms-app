@@ -42,6 +42,23 @@
           </q-item-section>
         </q-item>
 
+        <!-- My Outlet (Sales only) -->
+        <q-item
+          v-if="userRole === 'Sales' && myOutletId"
+          clickable
+          v-ripple
+          :active="route.name === 'outlet-detail' && route.params.id === myOutletId"
+          active-class="menu-item-active"
+          :to="{ name: 'outlet-detail', params: { id: myOutletId } }"
+        >
+          <q-item-section avatar>
+            <q-icon name="store_mall_directory" />
+          </q-item-section>
+          <q-item-section>
+            <q-item-label>My Outlet</q-item-label>
+          </q-item-section>
+        </q-item>
+
         <!-- Divider -->
         <q-separator class="q-my-md" />
 
@@ -102,6 +119,20 @@ const drawerClass = computed(() => {
   return $q.dark.isActive ? "bg-grey-9" : "bg-white";
 });
 
+// Determine user role and selected outlet from localStorage
+const userRole = computed(() => {
+  try {
+    const userRaw = localStorage.getItem("user");
+    if (!userRaw) return null;
+    const user = JSON.parse(userRaw) as { role?: string };
+    return user.role || null;
+  } catch {
+    return null;
+  }
+});
+
+const myOutletId = computed(() => localStorage.getItem("selectedOutletId"));
+
 const handleLogout = async () => {
   try {
     // Call logout API
@@ -110,6 +141,7 @@ const handleLogout = async () => {
     // Clear user data from localStorage
     localStorage.removeItem("user");
     localStorage.removeItem("token");
+    localStorage.removeItem("selectedOutletId");
 
     // Show success notification
     $q.notify({
@@ -124,6 +156,7 @@ const handleLogout = async () => {
     // Even if API fails, clear local data and logout
     localStorage.removeItem("user");
     localStorage.removeItem("token");
+    localStorage.removeItem("selectedOutletId");
 
     const message = error instanceof Error ? error.message : "Logout failed";
     $q.notify({

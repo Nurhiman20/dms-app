@@ -2,25 +2,12 @@
   <q-page class="q-pa-md">
     <div class="dashboard-container">
       <!-- Access Denied Message -->
-      <div v-if="!isAdmin" class="access-denied-container">
-        <q-card flat bordered :class="['chart-card', cardClass]">
-          <q-card-section class="text-center q-pa-xl">
-            <q-icon name="lock" size="64px" color="negative" class="q-mb-md" />
-            <h2 class="access-denied-title">Access Denied</h2>
-            <p class="access-denied-text">
-              You don't have permission to view the dashboard. Only administrators can
-              access this page.
-            </p>
-            <q-btn
-              unelevated
-              color="primary"
-              label="Go to Outlets"
-              @click="router.push({ name: 'outlets' })"
-              class="q-mt-md"
-            />
-          </q-card-section>
-        </q-card>
-      </div>
+      <AccessDeniedCard
+        v-if="!isAdmin"
+        :message="`You don't have permission to view the dashboard. Only administrators can access this page.`"
+        button-label="Go to My Outlet"
+        @action="goToMyOutlet"
+      />
 
       <!-- Dashboard Content (Admin Only) -->
       <template v-else>
@@ -74,6 +61,7 @@ import {
   Legend,
 } from "chart.js";
 import { getDashboardStats, type RegionSalesStat } from "../services/dashboardApi";
+import AccessDeniedCard from "../components/AccessDeniedCard.vue";
 
 const $q = useQuasar();
 const router = useRouter();
@@ -100,6 +88,16 @@ const user = computed(() => {
 const isAdmin = computed(() => {
   return user.value?.role === "Admin";
 });
+
+// Sales helper: navigate to user's selected outlet
+const myOutletId = computed(() => localStorage.getItem('selectedOutletId'))
+const goToMyOutlet = () => {
+  if (myOutletId.value) {
+    router.push({ name: 'outlet-detail', params: { id: myOutletId.value } })
+  } else {
+    $q.notify({ type: 'warning', message: 'No outlet selected', position: 'top' })
+  }
+}
 
 // Dashboard data state
 const dashboardStats = ref<RegionSalesStat[]>([]);

@@ -37,6 +37,30 @@
                   </template>
                 </q-select>
 
+                <!-- Outlet Selector (visible for Sales role) -->
+                <q-select
+                  v-if="selectedRole === 'Sales'"
+                  v-model="selectedOutletId"
+                  :options="outletOptions"
+                  option-label="label"
+                  option-value="value"
+                  emit-value
+                  map-options
+                  label="Select Outlet"
+                  outlined
+                  class="q-mb-md"
+                  :dense="false"
+                  :loading="outletLoading"
+                  :disable="outletLoading || outletOptions.length === 0"
+                  options-dense
+                  :hint="outletError || ''"
+                  :error="!!outletError"
+                >
+                  <template v-slot:prepend>
+                    <q-icon name="store" />
+                  </template>
+                </q-select>
+
                 <!-- Login Button -->
                 <q-btn
                   unelevated
@@ -44,7 +68,7 @@
                   size="md"
                   :label="isLoading ? 'Logging in...' : 'Login'"
                   class="full-width login-button q-mb-lg"
-                  :disable="!selectedRole || isLoading"
+                  :disable="isLoginDisabled"
                   :loading="isLoading"
                   @click="handleLogin"
                 />
@@ -67,18 +91,49 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useQuasar } from "quasar";
 import { login } from "../services/authApi";
+import { useOutletStore } from "../stores/outlet";
 
 const router = useRouter();
 const $q = useQuasar();
 
 const selectedRole = ref<string | null>(null);
+const selectedOutletId = ref<string | null>(null);
 const roleOptions = ["Admin", "Sales"];
 const isLoading = ref(false);
 const errorMessage = ref<string | null>(null);
+
+// Outlet data via store
+const outletStore = useOutletStore();
+const outletLoading = computed(() => outletStore.loading);
+const outletError = computed(() => outletStore.error);
+const outletOptions = computed(() =>
+  outletStore.activeOutlets.map((o) => ({ label: o.name, value: o.id }))
+);
+
+// Enable button only if role selected; for Sales also require outlet
+const isLoginDisabled = computed(() => {
+  if (isLoading.value) return true;
+  if (!selectedRole.value) return true;
+  if (selectedRole.value === "Sales" && !selectedOutletId.value) return true;
+  return false;
+});
+
+// Fetch outlets when Sales role selected
+watch(
+  () => selectedRole.value,
+  async (role) => {
+    if (role === "Sales") {
+      selectedOutletId.value = null;
+      if (outletStore.outlets.length === 0) {
+        await outletStore.fetchOutlets();
+      }
+    }
+  }
+);
 
 const handleLogin = async () => {
   if (!selectedRole.value) {
@@ -122,9 +177,18 @@ const handleLogin = async () => {
       // Store user info in localStorage (or use a store)
       localStorage.setItem("user", JSON.stringify(response.user));
       localStorage.setItem("token", response.token);
+      if (selectedRole.value === "Sales" && selectedOutletId.value) {
+        localStorage.setItem("selectedOutletId", selectedOutletId.value);
+      } else {
+        localStorage.removeItem("selectedOutletId");
+      }
 
-      // Navigate to dashboard
-      router.push({ name: "dashboard" });
+      // Navigate based on role
+      if (selectedRole.value === "Sales" && selectedOutletId.value) {
+        router.push({ name: "outlet-detail", params: { id: selectedOutletId.value } });
+      } else {
+        router.push({ name: "dashboard" });
+      }
     }
   } catch (error) {
     // If offline and login fails, check if we can use cached credentials
@@ -143,7 +207,16 @@ const handleLogin = async () => {
             message: `Using cached credentials. Welcome, ${user.name}! (Offline mode)`,
             position: "top",
           });
-          router.push({ name: "dashboard" });
+          if (selectedRole.value === "Sales" && selectedOutletId.value) {
+            localStorage.setItem("selectedOutletId", selectedOutletId.value);
+            router.push({
+              name: "outlet-detail",
+              params: { id: selectedOutletId.value },
+            });
+          } else {
+            localStorage.removeItem("selectedOutletId");
+            router.push({ name: "dashboard" });
+          }
           isLoading.value = false;
           return;
         }

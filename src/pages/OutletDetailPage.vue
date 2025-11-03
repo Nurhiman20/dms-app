@@ -3,6 +3,7 @@
     <div class="outlet-detail-container">
       <!-- Back Button -->
       <q-btn
+        v-if="isAdmin"
         flat
         rounded
         icon="arrow_back"
@@ -85,7 +86,12 @@
         </q-card>
 
         <!-- Sales Summary Card -->
-        <q-card flat bordered :class="['sales-summary-card', 'q-mb-lg', cardClass]" v-if="sales.length > 0">
+        <q-card
+          flat
+          bordered
+          :class="['sales-summary-card', 'q-mb-lg', cardClass]"
+          v-if="sales.length > 0"
+        >
           <q-card-section>
             <div class="sales-summary-header q-mb-md">
               <h2 class="sales-summary-title">Sales Summary</h2>
@@ -200,6 +206,19 @@ const cardClass = computed(() => {
 
 const outletId = computed(() => route.params.id as string)
 const showNewSaleDialog = ref<boolean>(false)
+
+// Role-based UI: hide back button for Sales
+const user = computed(() => {
+  const userStr = localStorage.getItem('user')
+  if (!userStr) return null
+  try {
+    return JSON.parse(userStr)
+  } catch {
+    return null
+  }
+})
+
+const isAdmin = computed(() => user.value?.role === 'Admin')
 
 const outlet = computed(() => outletStore.getOutletById(outletId.value))
 const loading = computed(() => outletStore.loading || salesStore.loading)

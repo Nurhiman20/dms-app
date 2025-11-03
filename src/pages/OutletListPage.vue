@@ -1,87 +1,98 @@
 <template>
   <q-page class="q-pa-lg">
     <div class="outlet-list-container">
-      <!-- Header -->
-      <div class="outlet-list-header q-mb-md">
-        <h1 class="outlet-list-title">Outlet List</h1>
-        <p class="outlet-list-subtitle">Manage and monitor all outlets</p>
-      </div>
+      <!-- Access Denied (Sales) -->
+      <AccessDeniedCard
+        v-if="!isAdmin"
+        :message="`You don't have permission to view all outlets. Only administrators can access this page.`"
+        button-label="Go to My Outlet"
+        @action="goToMyOutlet"
+      />
 
-      <!-- Search and Filters -->
-      <div class="outlet-filters q-mb-md">
-        <div class="row outlet-filters-row">
-          <div class="col-xs-12 col-sm-6 col-md-4">
-            <q-input
-              v-model="searchQuery"
-              outlined
-              placeholder="Search by outlet name..."
-              clearable
-              class="outlet-search-input"
-              dense
-            >
-              <template v-slot:prepend>
-                <q-icon name="search" />
-              </template>
-            </q-input>
-          </div>
-          <div class="col-xs-12 col-sm-6 col-md-4">
-            <q-select
-              v-model="selectedRegion"
-              :options="regionOptions"
-              label="Filter by Region"
-              outlined
-              clearable
-              dense
-            >
-              <template v-slot:prepend>
-                <q-icon name="location_on" />
-              </template>
-            </q-select>
-          </div>
-          <div class="col-xs-12 col-sm-6 col-md-4">
-            <q-select
-              v-model="selectedStatus"
-              :options="statusOptions"
-              label="Filter by Status"
-              outlined
-              clearable
-              dense
-            >
-              <template v-slot:prepend>
-                <q-icon name="filter_list" />
-              </template>
-            </q-select>
+      <!-- Admin Content -->
+      <template v-else>
+        <!-- Header -->
+        <div class="outlet-list-header q-mb-md">
+          <h1 class="outlet-list-title">Outlet List</h1>
+          <p class="outlet-list-subtitle">Manage and monitor all outlets</p>
+        </div>
+
+        <!-- Search and Filters -->
+        <div class="outlet-filters q-mb-md">
+          <div class="row outlet-filters-row">
+            <div class="col-xs-12 col-sm-6 col-md-4">
+              <q-input
+                v-model="searchQuery"
+                outlined
+                placeholder="Search by outlet name..."
+                clearable
+                class="outlet-search-input"
+                dense
+              >
+                <template v-slot:prepend>
+                  <q-icon name="search" />
+                </template>
+              </q-input>
+            </div>
+            <div class="col-xs-12 col-sm-6 col-md-4">
+              <q-select
+                v-model="selectedRegion"
+                :options="regionOptions"
+                label="Filter by Region"
+                outlined
+                clearable
+                dense
+              >
+                <template v-slot:prepend>
+                  <q-icon name="location_on" />
+                </template>
+              </q-select>
+            </div>
+            <div class="col-xs-12 col-sm-6 col-md-4">
+              <q-select
+                v-model="selectedStatus"
+                :options="statusOptions"
+                label="Filter by Status"
+                outlined
+                clearable
+                dense
+              >
+                <template v-slot:prepend>
+                  <q-icon name="filter_list" />
+                </template>
+              </q-select>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- Table -->
-      <q-table
-        :rows="filteredOutlets"
-        :columns="columns"
-        row-key="id"
-        :rows-per-page-options="[10, 20, 50]"
-        :loading="loading"
-        flat
-        bordered
-        class="outlet-table"
-        @row-click="handleRowClick"
-      >
-        <template v-slot:body-cell-status="props">
-          <q-td :props="props">
-            <q-badge
-              :color="props.row.isActive ? 'positive' : 'negative'"
-              :label="props.row.isActive ? 'Active' : 'Inactive'"
-            />
-          </q-td>
-        </template>
+        <!-- Table -->
+        <q-table
+          :rows="filteredOutlets"
+          :columns="columns"
+          row-key="id"
+          :rows-per-page-options="[10, 20, 50]"
+          :loading="loading"
+          flat
+          bordered
+          class="outlet-table"
+          @row-click="handleRowClick"
+        >
+          <template v-slot:body-cell-status="props">
+            <q-td :props="props">
+              <q-badge
+                :color="props.row.isActive ? 'positive' : 'negative'"
+                :label="props.row.isActive ? 'Active' : 'Inactive'"
+              />
+            </q-td>
+          </template>
 
-        <template v-slot:body-cell-totalOrder="props">
-          <q-td :props="props" class="text-right">
-            {{ props.value.toLocaleString() }}
-          </q-td>
-        </template>
-      </q-table>
+          <template v-slot:body-cell-totalOrder="props">
+            <q-td :props="props" class="text-right">
+              {{ props.value.toLocaleString() }}
+            </q-td>
+          </template>
+        </q-table>
+      </template>
     </div>
   </q-page>
 </template>
@@ -90,8 +101,38 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useOutletStore, type Outlet } from '../stores/outlet'
+import { useQuasar } from 'quasar'
+import AccessDeniedCard from '../components/AccessDeniedCard.vue'
 
 const router = useRouter()
+const $q = useQuasar()
+// Theme-aware card background
+const cardClass = computed(() => {
+  return $q.dark.isActive ? 'bg-grey-9' : 'bg-white'
+})
+
+// Role-based access (admin only)
+const user = computed(() => {
+  const userStr = localStorage.getItem('user')
+  if (!userStr) return null
+  try {
+    return JSON.parse(userStr)
+  } catch {
+    return null
+  }
+})
+
+const isAdmin = computed(() => user.value?.role === 'Admin')
+
+const myOutletId = computed(() => localStorage.getItem('selectedOutletId'))
+
+const goToMyOutlet = () => {
+  if (myOutletId.value) {
+    router.push({ name: 'outlet-detail', params: { id: myOutletId.value } })
+  } else {
+    $q.notify({ type: 'warning', message: 'No outlet selected', position: 'top' })
+  }
+}
 
 const outletStore = useOutletStore()
 const searchQuery = ref<string | null>('')
@@ -117,16 +158,16 @@ const debounceSearch = (value: string | null | undefined) => {
     clearTimeout(debounceTimer)
     debounceTimer = null
   }
-  
+
   // Normalize empty values (null, undefined, or empty string)
   const normalizedValue = value == null || value === '' ? '' : value
-  
+
   // If cleared (empty), update immediately without debounce
   if (normalizedValue === '') {
     debouncedSearchQuery.value = ''
     return
   }
-  
+
   // Otherwise, debounce the search
   debounceTimer = setTimeout(() => {
     debouncedSearchQuery.value = normalizedValue
