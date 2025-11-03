@@ -1,36 +1,60 @@
 <template>
   <q-page class="q-pa-md">
     <div class="dashboard-container">
-      <!-- Header -->
-      <div class="dashboard-header q-mb-md">
-        <h1 class="dashboard-title">Dashboard</h1>
-        <p class="dashboard-subtitle">Sales overview by region</p>
-      </div>
-
-      <!-- Chart Container -->
-      <div class="chart-container">
+      <!-- Access Denied Message -->
+      <div v-if="!isAdmin" class="access-denied-container">
         <q-card flat bordered :class="['chart-card', cardClass]">
-          <q-card-section>
-            <div class="chart-header q-mb-md">
-              <h2 class="chart-title">Total Sales per Region</h2>
-            </div>
-            <div class="chart-wrapper">
-              <div v-if="loading" class="chart-loading">
-                <q-spinner color="primary" size="48px" />
-                <p class="loading-text">Loading dashboard data...</p>
-              </div>
-              <div v-else-if="error" class="chart-error">
-                <q-icon name="error_outline" size="48px" color="negative" />
-                <p class="error-text">{{ error }}</p>
-              </div>
-              <Bar v-else-if="chartData" :data="chartData" :options="chartOptions" />
-              <div v-else class="chart-empty">
-                <p class="empty-text">No data available</p>
-              </div>
-            </div>
+          <q-card-section class="text-center q-pa-xl">
+            <q-icon name="lock" size="64px" color="negative" class="q-mb-md" />
+            <h2 class="access-denied-title">Access Denied</h2>
+            <p class="access-denied-text">
+              You don't have permission to view the dashboard. Only administrators can
+              access this page.
+            </p>
+            <q-btn
+              unelevated
+              color="primary"
+              label="Go to Outlets"
+              @click="router.push({ name: 'outlets' })"
+              class="q-mt-md"
+            />
           </q-card-section>
         </q-card>
       </div>
+
+      <!-- Dashboard Content (Admin Only) -->
+      <template v-else>
+        <!-- Header -->
+        <div class="dashboard-header q-mb-md">
+          <h1 class="dashboard-title">Dashboard</h1>
+          <p class="dashboard-subtitle">Sales overview by region</p>
+        </div>
+
+        <!-- Chart Container -->
+        <div class="chart-container">
+          <q-card flat bordered :class="['chart-card', cardClass]">
+            <q-card-section>
+              <div class="chart-header q-mb-md">
+                <h2 class="chart-title">Total Sales per Region</h2>
+              </div>
+              <div class="chart-wrapper">
+                <div v-if="loading" class="chart-loading">
+                  <q-spinner color="primary" size="48px" />
+                  <p class="loading-text">Loading dashboard data...</p>
+                </div>
+                <div v-else-if="error" class="chart-error">
+                  <q-icon name="error_outline" size="48px" color="negative" />
+                  <p class="error-text">{{ error }}</p>
+                </div>
+                <Bar v-else-if="chartData" :data="chartData" :options="chartOptions" />
+                <div v-else class="chart-empty">
+                  <p class="empty-text">No data available</p>
+                </div>
+              </div>
+            </q-card-section>
+          </q-card>
+        </div>
+      </template>
     </div>
   </q-page>
 </template>
@@ -38,6 +62,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
 import { useQuasar } from "quasar";
+import { useRouter } from "vue-router";
 import { Bar } from "vue-chartjs";
 import {
   Chart as ChartJS,
@@ -51,6 +76,7 @@ import {
 import { getDashboardStats, type RegionSalesStat } from "../services/dashboardApi";
 
 const $q = useQuasar();
+const router = useRouter();
 
 // Theme-aware card background
 const cardClass = computed(() => {
@@ -60,6 +86,21 @@ const cardClass = computed(() => {
 // Register Chart.js components
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
+// Check user role from localStorage
+const user = computed(() => {
+  const userStr = localStorage.getItem("user");
+  if (!userStr) return null;
+  try {
+    return JSON.parse(userStr);
+  } catch {
+    return null;
+  }
+});
+
+const isAdmin = computed(() => {
+  return user.value?.role === "Admin";
+});
+
 // Dashboard data state
 const dashboardStats = ref<RegionSalesStat[]>([]);
 const loading = ref<boolean>(false);
@@ -67,6 +108,11 @@ const error = ref<string | null>(null);
 
 // Fetch dashboard statistics on component mount
 onMounted(async () => {
+  // Only fetch data if user is admin
+  if (!isAdmin.value) {
+    return;
+  }
+
   loading.value = true;
   error.value = null;
 
@@ -253,6 +299,23 @@ const chartOptions = computed(() => {
 
 .error-text
   color: #DC2626
+
+.access-denied-container
+  max-width: 600px
+  margin: 0 auto
+  margin-top: 64px
+
+.access-denied-title
+  font-size: 24px
+  font-weight: 600
+  margin: 16px 0
+  color: #DC2626
+
+.access-denied-text
+  font-size: 16px
+  color: #6B7280
+  margin: 0 0 24px 0
+  line-height: 1.5
 
 @media (max-width: 599px)
   .chart-wrapper
