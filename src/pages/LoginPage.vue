@@ -4,7 +4,13 @@
       <q-page class="row no-wrap-sm">
         <!-- Left Side - Background Image -->
         <div class="col-xs-0 col-sm-6 login-left-panel">
-          <div class="login-background-image"></div>
+          <img
+            src="/images/hero-login.webp"
+            alt="DMS App Login Background"
+            class="login-background-image"
+            loading="lazy"
+            decoding="async"
+          />
         </div>
 
         <!-- Right Side - Login Form -->
@@ -260,10 +266,9 @@ const handleLogin = async () => {
 .login-background-image
   width: 100%
   height: 100vh
-  background-image: url('/images/hero-login.webp')
-  background-size: cover
-  background-position: center
-  background-repeat: no-repeat
+  object-fit: cover
+  object-position: center
+  display: block
 
 .login-container
   width: 100%

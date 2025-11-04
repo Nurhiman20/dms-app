@@ -46,9 +46,12 @@ vi.mock('../stores/sales', async () => {
   };
 });
 
-// Network status and offline queue mocks
-const checkNetworkStatusMock = vi.fn(async () => true);
-const enqueueMock = vi.fn(async () => undefined);
+// Network status and offline queue mocks - hoisted to be accessible in both factory and tests
+const { checkNetworkStatusMock, enqueueMock } = vi.hoisted(() => {
+  const checkNetworkStatusMock = vi.fn(async () => true);
+  const enqueueMock = vi.fn(async () => undefined);
+  return { checkNetworkStatusMock, enqueueMock };
+});
 vi.mock('../utils/networkStatus', () => ({
   checkNetworkStatus: () => checkNetworkStatusMock(),
 }));
@@ -189,4 +192,4 @@ describe('NewSaleDialog', () => {
     expect(vm.form.customerName).toBe('');
     expect(vm.form.paymentMethod).toBe('');
   });
-})
+});

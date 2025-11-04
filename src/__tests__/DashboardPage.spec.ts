@@ -25,9 +25,22 @@ vi.mock('quasar', () => {
   };
 });
 
-// Stub Chart component
-vi.mock('vue-chartjs', () => ({
-  Bar: { template: '<div data-test="bar-chart" />' },
+// Mock Chart.js dynamic imports
+const BarComponent = { template: '<div data-test="bar-chart" />' };
+vi.mock('vue-chartjs', async () => ({
+  Bar: BarComponent,
+}));
+
+vi.mock('chart.js', async () => ({
+  Chart: {
+    register: vi.fn(),
+  },
+  CategoryScale: {},
+  LinearScale: {},
+  BarElement: {},
+  Title: {},
+  Tooltip: {},
+  Legend: {},
 }));
 
 // Mock dashboard API
@@ -97,12 +110,10 @@ describe('DashboardPage', () => {
 
     const wrapper = mountDashboard();
 
-    // Await onMounted async
-    await Promise.resolve();
-    await Promise.resolve();
-
-    // Chart stub is rendered
-    expect(wrapper.find('[data-test="bar-chart"]').exists()).toBe(true);
+    // Wait for chart to be rendered (handles async chart loading and API call)
+    await vi.waitFor(() => {
+      expect(wrapper.find('[data-test="bar-chart"]').exists()).toBe(true);
+    }, { timeout: 2000 });
   });
 
   it('shows error text when API fails', async () => {
@@ -110,10 +121,11 @@ describe('DashboardPage', () => {
     getDashboardStatsMock.mockResolvedValue({ success: false, message: 'Failed' });
 
     const wrapper = mountDashboard();
-    await Promise.resolve();
-    await Promise.resolve();
 
-    expect(wrapper.text()).toContain('Failed');
+    // Wait for error message to appear (handles async chart loading and API call)
+    await vi.waitFor(() => {
+      expect(wrapper.text()).toContain('Failed');
+    }, { timeout: 2000 });
   });
 })
 

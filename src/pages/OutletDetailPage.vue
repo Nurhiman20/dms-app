@@ -187,12 +187,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, defineAsyncComponent } from 'vue'
 import { useRoute } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useOutletStore } from '../stores/outlet'
 import { useSalesStore, type Sale } from '../stores/sales'
-import NewSaleDialog from '../components/NewSaleDialog.vue'
+
+// Lazy load NewSaleDialog component
+const NewSaleDialog = defineAsyncComponent(() => import('../components/NewSaleDialog.vue'))
 
 const route = useRoute()
 const $q = useQuasar()

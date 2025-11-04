@@ -33,7 +33,20 @@
                   <q-icon name="error_outline" size="48px" color="negative" />
                   <p class="error-text">{{ error }}</p>
                 </div>
-                <Bar v-else-if="chartData" :data="chartData" :options="chartOptions" />
+                <div v-else-if="chartLoading" class="chart-loading">
+                  <q-spinner color="primary" size="48px" />
+                  <p class="loading-text">Loading chart library...</p>
+                </div>
+                <div v-else-if="chartError" class="chart-error">
+                  <q-icon name="error_outline" size="48px" color="negative" />
+                  <p class="error-text">{{ chartError }}</p>
+                </div>
+                <component
+                  v-else-if="chartData && Bar"
+                  :is="Bar"
+                  :data="chartData"
+                  :options="chartOptions"
+                />
                 <div v-else class="chart-empty">
                   <p class="empty-text">No data available</p>
                 </div>
@@ -47,19 +60,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, shallowRef } from "vue";
 import { useQuasar } from "quasar";
 import { useRouter } from "vue-router";
-import { Bar } from "vue-chartjs";
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-} from "chart.js";
 import { getDashboardStats, type RegionSalesStat } from "../services/dashboardApi";
 import AccessDeniedCard from "../components/AccessDeniedCard.vue";
 
@@ -71,8 +74,35 @@ const cardClass = computed(() => {
   return $q.dark.isActive ? 'bg-grey-9' : 'bg-white';
 });
 
-// Register Chart.js components
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+// Lazy load Chart.js components
+const Bar = shallowRef<any>(null);
+const chartLoading = ref<boolean>(false);
+const chartError = ref<string | null>(null);
+
+// Async function to load Chart.js
+const loadChart = async () => {
+  if (Bar.value) return; // Already loaded
+
+  chartLoading.value = true;
+  chartError.value = null;
+
+  try {
+    const [{ Bar: BarComponent }, { Chart: ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend }] = await Promise.all([
+      import("vue-chartjs"),
+      import("chart.js")
+    ]);
+
+    // Register Chart.js components
+    ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+
+    Bar.value = BarComponent;
+    chartLoading.value = false;
+  } catch (err) {
+    chartError.value = err instanceof Error ? err.message : "Failed to load chart library";
+    chartLoading.value = false;
+    console.error("Failed to load Chart.js:", err);
+  }
+};
 
 // Check user role from localStorage
 const user = computed(() => {
@@ -110,6 +140,9 @@ onMounted(async () => {
   if (!isAdmin.value) {
     return;
   }
+
+  // Load Chart.js library first (lazy load)
+  await loadChart();
 
   loading.value = true;
   error.value = null;
